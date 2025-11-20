@@ -52,7 +52,13 @@ def update_user_factors_parallel(U, V, ratings, regularization, n_jobs=-1):
     """
     n_users, n_factors = U.shape
     if n_jobs == -1:
-        n_jobs = multiprocessing.cpu_count()
+        try:
+            n_jobs = multiprocessing.cpu_count()
+        except NotImplementedError:
+            n_jobs = 1
+    
+    if n_jobs < 1:
+        n_jobs = 1
         
     # Precompute V.T @ V + lambda * I
     VtV = V.T @ V
@@ -124,6 +130,16 @@ def _solve_batch(args):
 
 def _parallel_als_step(Update_Matrix, Fixed_Matrix, ratings_csr, regularization, n_jobs, is_user):
     from scipy.sparse import csr_matrix
+    import multiprocessing
+    
+    if n_jobs is None or n_jobs < 1:
+        try:
+            n_jobs = multiprocessing.cpu_count()
+        except NotImplementedError:
+            n_jobs = 1
+            
+    if n_jobs < 1:
+        n_jobs = 1
     
     n_targets = Update_Matrix.shape[0]
     
