@@ -141,6 +141,10 @@ def _parallel_als_step(Update_Matrix, Fixed_Matrix, ratings_csr, regularization,
     if n_jobs < 1:
         n_jobs = 1
     
+    # Ensure CSR format for efficient row slicing
+    if not isinstance(ratings_csr, csr_matrix):
+        ratings_csr = ratings_csr.tocsr()
+    
     n_targets = Update_Matrix.shape[0]
     
     # Split indices into chunks
@@ -164,7 +168,11 @@ def _parallel_als_step(Update_Matrix, Fixed_Matrix, ratings_csr, regularization,
     
     new_matrix = np.zeros_like(Update_Matrix)
     
-    with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+    # Use ThreadPoolExecutor to avoid Windows multiprocessing issues (pickling, spawn)
+    # For Numpy operations that release GIL, this is also efficient.
+    from concurrent.futures import ThreadPoolExecutor
+    
+    with ThreadPoolExecutor(max_workers=n_jobs) as executor:
         results = executor.map(_solve_batch, tasks)
         
     for indices, vectors in results:
