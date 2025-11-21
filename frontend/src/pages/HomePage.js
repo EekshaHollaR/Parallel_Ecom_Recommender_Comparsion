@@ -1,63 +1,88 @@
-import React from 'react';
-import { Container, Typography, Grid, Card, CardActionArea, CardContent, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import RecommendIcon from '@mui/icons-material/Recommend';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import React, { useEffect, useState } from 'react';
+import { Container, Typography, Box, Grid, CircularProgress, Paper, Chip } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
+import ProductCard from '../components/ProductCard';
 
 const HomePage = () => {
-    const navigate = useNavigate();
+    const { user, token } = useAuth();
+    const [recommendations, setRecommendations] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            try {
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const res = await fetch('/recommendations?n=4', { headers });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    setRecommendations(data.data.recommendations);
+                }
+            } catch (error) {
+                console.error("Error fetching recommendations:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecommendations();
+    }, [token]);
 
     return (
-        <Container maxWidth="md" sx={{ mt: 8 }}>
-            <Box textAlign="center" mb={6}>
-                <Typography variant="h2" component="h1" gutterBottom>
-                    AI Commerce Engine
-                </Typography>
-                <Typography variant="h5" color="text.secondary">
-                    Parallel Recommender & Real-time Price Comparison
-                </Typography>
-            </Box>
+        <Box>
+            {/* Hero Section */}
+            <Paper
+                sx={{
+                    p: 6,
+                    mb: 4,
+                    background: 'linear-gradient(45deg, #1a237e 30%, #283593 90%)',
+                    color: 'white',
+                    borderRadius: 0
+                }}
+            >
+                <Container maxWidth="lg">
+                    <Typography variant="h3" gutterBottom fontWeight="bold">
+                        {user ? `Welcome back, ${user.username}!` : 'Welcome to AI-Recommender'}
+                    </Typography>
+                    <Typography variant="h5" sx={{ opacity: 0.9 }}>
+                        Discover the best prices and personalized picks just for you.
+                    </Typography>
+                </Container>
+            </Paper>
 
-            <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
-                    <Card sx={{ height: '100%' }}>
-                        <CardActionArea
-                            onClick={() => navigate('/recommendations')}
-                            sx={{ height: '100%', p: 2 }}
-                        >
-                            <CardContent sx={{ textAlign: 'center' }}>
-                                <RecommendIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-                                <Typography variant="h5" gutterBottom>
-                                    AI Recommendations
-                                </Typography>
-                                <Typography variant="body1" color="text.secondary">
-                                    Get personalized product recommendations using our parallel ALS-NCG algorithm.
-                                </Typography>
-                            </CardContent>
-                        </CardActionArea>
-                    </Card>
-                </Grid>
+            <Container maxWidth="lg">
+                {/* Featured Categories */}
+                <Box sx={{ mb: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {['Electronics', 'Mobiles', 'Laptops', 'Headphones', 'Cameras'].map((cat) => (
+                        <Chip
+                            key={cat}
+                            label={cat}
+                            onClick={() => { }}
+                            sx={{ fontSize: '1rem', py: 2, px: 1 }}
+                            clickable
+                        />
+                    ))}
+                </Box>
 
-                <Grid item xs={12} md={6}>
-                    <Card sx={{ height: '100%' }}>
-                        <CardActionArea
-                            onClick={() => navigate('/compare')}
-                            sx={{ height: '100%', p: 2 }}
-                        >
-                            <CardContent sx={{ textAlign: 'center' }}>
-                                <CompareArrowsIcon sx={{ fontSize: 60, color: 'secondary.main', mb: 2 }} />
-                                <Typography variant="h5" gutterBottom>
-                                    Price Comparison
-                                </Typography>
-                                <Typography variant="body1" color="text.secondary">
-                                    Compare prices across multiple e-commerce sites in real-time.
-                                </Typography>
-                            </CardContent>
-                        </CardActionArea>
-                    </Card>
-                </Grid>
-            </Grid>
-        </Container>
+                {/* Recommendations Section */}
+                <Typography variant="h4" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
+                    Recommended for You
+                </Typography>
+
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Grid container spacing={3}>
+                        {recommendations.map((item, index) => (
+                            <Grid item xs={12} sm={6} md={3} key={index}>
+                                <ProductCard product={item} />
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
+            </Container>
+        </Box>
     );
 };
 

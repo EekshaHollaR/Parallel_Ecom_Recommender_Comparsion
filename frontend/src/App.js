@@ -1,55 +1,47 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Container, Box, CssBaseline } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+import Dashboard from './pages/Dashboard';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Box, Typography } from '@mui/material';
 import HomePage from './pages/HomePage';
-import RecommendationPage from './pages/RecommendationPage';
 import PriceComparePage from './pages/PriceComparePage';
+import RecommendationPage from './pages/RecommendationPage';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 
-const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#1976d2',
-        },
-        secondary: {
-            main: '#dc004e',
-        },
-        background: {
-            default: '#f5f7fa',
-        },
-    },
-});
 
 function App() {
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
+        <AuthProvider>
             <Router>
-                <Box sx={{ flexGrow: 1 }}>
-                    <AppBar position="static">
-                        <Toolbar>
-                            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                                <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
-                                    AI Recommender
-                                </Link>
-                            </Typography>
-                            <Button color="inherit" component={Link} to="/">Home</Button>
-                            <Button color="inherit" component={Link} to="/recommendations">Recommendations</Button>
-                            <Button color="inherit" component={Link} to="/compare">Compare Prices</Button>
-                        </Toolbar>
-                    </AppBar>
-
-                    <Container sx={{ py: 4 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+                    <Navbar />
+                    <Box component="main" sx={{ flexGrow: 1, py: 3 }}>
                         <Routes>
                             <Route path="/" element={<HomePage />} />
-                            <Route path="/recommendations" element={<RecommendationPage />} />
                             <Route path="/compare" element={<PriceComparePage />} />
+                            <Route path="/recommendations" element={<RecommendationPage />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/signup" element={<Signup />} />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <ProtectedRoute>
+                                        <Dashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
                         </Routes>
-                    </Container>
+                    </Box>
+                    {/* Footer could go here */}
+                    <Box sx={{ p: 2, bgcolor: '#1a237e', color: 'white', textAlign: 'center' }}>
+                        <Typography variant="body2">© 2024 AI-Recommender. All rights reserved.</Typography>
+                    </Box>
                 </Box>
             </Router>
-        </ThemeProvider>
+        </AuthProvider >
     );
 }
 

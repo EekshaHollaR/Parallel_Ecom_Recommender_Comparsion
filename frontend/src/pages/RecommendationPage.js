@@ -1,47 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Paper } from '@mui/material';
-import SearchBar from '../components/SearchBar';
 import RecommendationList from '../components/RecommendationList';
 import Loader from '../components/Loader';
 import ErrorBanner from '../components/ErrorBanner';
-import api from '../api';
+import { useAuth } from '../context/AuthContext';
 
 const RecommendationPage = () => {
     const [recommendations, setRecommendations] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { token, user } = useAuth();
 
-    const handleSearch = async (userId) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await api.get(`/recommendations?user_id=${userId}`);
-            if (response.data.status === 'success') {
-                setRecommendations(response.data.data.recommendations);
-            } else {
-                setError(response.data.message);
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            try {
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                // Default to 6 items for the page
+                const res = await fetch('/api/recommendations?n=6', { headers });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    setRecommendations(data.data.recommendations);
+                } else {
+                    setError(data.message);
+                }
+            } catch (err) {
+                setError('Failed to fetch recommendations');
+                console.error(err);
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch recommendations');
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+
+        fetchRecommendations();
+    }, [token]);
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                User Recommendations
-            </Typography>
-
-            <Paper sx={{ p: 3, mb: 4 }}>
-                <Typography variant="body1" gutterBottom>
-                    Enter a User ID to get personalized AI recommendations.
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" gutterBottom fontWeight="bold">
+                    Explore
                 </Typography>
-                <SearchBar onSearch={handleSearch} placeholder="Enter User ID (e.g., 0)" />
-            </Paper>
+                <Typography variant="h6" color="text.secondary">
+                    {user ? `Curated picks for ${user.username}` : 'Trending items you might like'}
+                </Typography>
+            </Box>
 
-            {loading && <Loader message="Generating recommendations..." />}
+            {loading && <Loader message="Curating your personalized feed..." />}
             {error && <ErrorBanner message={error} />}
 
             {!loading && !error && (
